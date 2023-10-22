@@ -4,7 +4,29 @@ OpenWrt device presence detection bash script. Works accross multiple APs. Liste
 
 ## Installation
 
+The hostname is important. Apply a simple logic.
+
+```text
+
+WifiAP-01
+WifiAP-02
+WifiAP-XX
+```
+
 ### MASTER ROUTER or ACCESS POINT
+
+Copy the 3 files in folder ROOT.
+wrtpresence
+wrtpresence_main.sh
+wrtwifistareport.sh
+
+```text
+chmod +x "/root/wrtpresence"
+chmod +x "/root/wrtpresence_main.sh"
+chmod +x "/root/wrtwifistareport.sh"
+```
+
+Install or remove the following packages
 
 ```text
 
