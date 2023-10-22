@@ -16,9 +16,14 @@ WifiAP-XX
 ### MASTER ROUTER or ACCESS POINT
 
 Copy the 3 files in folder ROOT.
+
+```text
 wrtpresence
 wrtpresence_main.sh
 wrtwifistareport.sh
+```
+
+Change file permissions
 
 ```text
 chmod +x "/root/wrtpresence"
