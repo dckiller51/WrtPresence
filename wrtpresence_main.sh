@@ -117,6 +117,18 @@ DEVICE_MAC[1]="aa:bb:cc:dd:ff:ee"
 #
 #
 # ====================
+# Mqtt Configuration
+# ====================
+MQTT_HOST="IP server MQTT"
+MQTT_PORT="1883"
+MQTT_USER="login"
+MQTT_PASSWORD="password"
+MQTT_TOPIC_ASSOCIATONS="homeassistant/openwrt/device_tracker/associations/"
+MQTT_TOPIC_DHCP="homeassistant/openwrt/device_tracker/dhcp_leases/"
+DHCP_LEASES="/tmp/dhcp.leases"
+#
+#
+# ====================
 # Script Configuration
 # ====================
 PATH=/usr/bin:/usr/sbin:/sbin:/bin
@@ -303,9 +315,16 @@ plAddClient() {
 		echo "${TMP_PLAC_STATION_NAME}=${TMP_PLAC_MAC_ADDR}=0" >> "${ASSOCIATIONS_DTO}"
 		cat "${ASSOCIATIONS_DTO}" 2>/dev/null | sort > "${ASSOCIATIONS_DTO}.tmp"
 		mv "${ASSOCIATIONS_DTO}.tmp" "${ASSOCIATIONS_DTO}"
+		mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_ASSOCIATONS" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$ASSOCIATIONS_DTO"
+		sleep 2
+		mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_DHCP" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$DHCP_LEASES"
+		
 	else
 		logAdd -q "plAddClient: ${TMP_PLAC_STATION_NAME} ${TMP_PLAC_MAC_ADDR}=0 reason: ${TMP_PLAC_TEXT_REASON}"
 		sed -i "s/^${TMP_PLAC_STATION_NAME}\=${TMP_PLAC_MAC_ADDR}\=.*$/${TMP_PLAC_STATION_NAME}\=${TMP_PLAC_MAC_ADDR}\=0/gI" "${ASSOCIATIONS_DTO}"
+		mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_ASSOCIATONS" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$ASSOCIATIONS_DTO"
+		sleep 2
+		mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_DHCP" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$DHCP_LEASES"
 	fi
 	# 
 	plCheckDevicesByCounters
@@ -336,6 +355,9 @@ plMarkClientAsDisconnected() {
 		logAdd -q "plMarkClientAsDisconnected: ${TMP_PLAC_STATION_NAME} -${TMP_PLAC_MAC_ADDR} reason: ${TMP_PLAC_TEXT_REASON}"
 		# ">0" means disconnected.
 		sed -i "s/${TMP_PLAC_STATION_NAME}\=${TMP_PLAC_MAC_ADDR}\=0/${TMP_PLAC_STATION_NAME}\=${TMP_PLAC_MAC_ADDR}\=1/gI" "${ASSOCIATIONS_DTO}"
+		mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_ASSOCIATONS" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$ASSOCIATIONS_DTO"
+		sleep 2
+		mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_DHCP" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$DHCP_LEASES"
 	else
 		logAdd -q "plMarkClientAsDisconnected: ${TMP_PLAC_STATION_NAME} -${TMP_PLAC_MAC_ADDR} reason: ${TMP_PLAC_TEXT_REASON} - Skipping, client not present in DTO."
 	fi
@@ -364,6 +386,9 @@ plRemoveClient() {
 	if ( grep -F -q -i "${TMP_PLAC_STATION_NAME}=${TMP_PLAC_MAC_ADDR}=" "${ASSOCIATIONS_DTO}" ); then
 		logAdd -q "plRemoveClient: ${TMP_PLAC_STATION_NAME} -${TMP_PLAC_MAC_ADDR}"
 		sed -i "/^${TMP_PLAC_STATION_NAME}\=${TMP_PLAC_MAC_ADDR}\=.*$/d" "${ASSOCIATIONS_DTO}"
+		mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_ASSOCIATONS" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$ASSOCIATIONS_DTO"
+		sleep 2
+		mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_DHCP" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$DHCP_LEASES"
 	else
 		logAdd -q "plRemoveClient: ${TMP_PLAC_STATION_NAME} -${TMP_PLAC_MAC_ADDR} - Skipping, client not present in DTO."
 	fi
@@ -455,6 +480,9 @@ logreader() {
 					if ( ! grep -q -i "^${STATION_NAME}_${WIFI_IF_NAME}=${MAC_ADDR}=0$" "${ASSOCIATIONS_DTO}" ); then
 						# logAdd -q "logreader: ${REPORT_TYPE}: MAC [${MAC_ADDR}] missing - Adding."
 						plAddClient "${STATION_NAME}_${WIFI_IF_NAME}" "${MAC_ADDR}" "${REPORT_TYPE}"
+						mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_ASSOCIATONS" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$ASSOCIATIONS_DTO"
+						sleep 2
+					    mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_DHCP" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$DHCP_LEASES"
 					fi
 				fi
 			done
@@ -532,6 +560,9 @@ disconnectIdxBumper() {
 			if [ ${TMP_DIB_COUNTER} -lt ${DEVICE_DISCONNECTED_IDX} ]; then
 				TMP_DIB_COUNTER="$((TMP_DIB_COUNTER+1))"
 				sed -i "s/${TMP_PREFIX}\=.*$/${TMP_PREFIX}\=${TMP_DIB_COUNTER}/g" "${ASSOCIATIONS_DTO}"
+				mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_ASSOCIATONS" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$ASSOCIATIONS_DTO"
+				sleep 2
+				mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_DHCP" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$DHCP_LEASES"
 			fi
 			# 
 			# If a counter is at max, the disconnected device is considered away from all APs.
@@ -565,6 +596,9 @@ disconnectIdxBumper() {
 					# 
 					# Remove all STA that were reported by this AP from ASSOCIATIONS_DTO.
 					sed -i "/^${line}_.*/d" "${ASSOCIATIONS_DTO}"
+					mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_ASSOCIATONS" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$ASSOCIATIONS_DTO"
+					sleep 2
+					mosquitto_pub -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "$MQTT_TOPIC_DHCP" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -f "$DHCP_LEASES"
 					# 
 					# Update PRESENT_DEVICES_DTO
 					plCheckDevicesByCounters
@@ -735,4 +769,3 @@ wait
 #
 logAdd "[INFO] End of script reached."
 exit 0
-
