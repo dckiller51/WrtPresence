@@ -59,9 +59,9 @@ dumpLocalAssociatedStations ()
 # 
 # Write associated STA client MAC addresses to local syslog.
 # If a syslog-ng server is configured in LUCI, the log will be forwarded to it.
-logger -t "wrtwifistareport" "$(echo ";$(dumpLocalAssociatedStations)")"
+logger -t "wrtwifistareport" "$(echo "$(dumpLocalAssociatedStations)")"
 #
 # For testing purposes only.
-# echo ";$(dumpLocalAssociatedStations)"
+# echo "$(dumpLocalAssociatedStations)"
 #
 exit 0
