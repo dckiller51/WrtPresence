@@ -5,6 +5,7 @@
 OpenWrt device presence detection bash script. Runs on multiple APs. Listens "passively" for events from the OpenWrt logread via syslog-ng on a master AP. Can "actively" resynchronise by running "wrtwifistareport" on slave APs every 5 minutes in the event of missed events. Events are transmitted to node-red. Node-red takes care of creating or updating your device-tracker. This is then transmitted to Homeassistant via MQTT.
 
 OpenWrt -> node-red -> mqtt -> homeassitant
+
 Exemple : device_tracker discovery:
 
 topic = `homeassistant/device_tracker/ab12cd23ab12/config` (unique_id = Address mac)
