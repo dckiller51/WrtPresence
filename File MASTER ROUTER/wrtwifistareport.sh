@@ -14,7 +14,8 @@
 # 	*/5 * * * * /bin/sh "/root/wrtwifistareport.sh" >/dev/null 2>&1
 # Restart Cron:
 # 	/etc/init.d/cron restart
-#
+WRTPRESENCE_DHCP_LEASES="/tmp/wrtpresence_dhcp.leases"
+DHCP_LEASES="/tmp/dhcp.leases"
 # -----------------------------------------------------
 # -------------- START OF FUNCTION BLOCK --------------
 # -----------------------------------------------------
@@ -47,9 +48,26 @@ dumpLocalAssociatedStations ()
 	# Content already returned because iw dev was called loudly.
 	return
 }
-dumpDhcpLeases ()
+dumpWrtPresenceDhcp ()
 {
-    cat /tmp/dhcp.leases | awk '{print $2";"$3";"$4}' | tr '\n' '|'
+	echo "$(WrtPresenceDhcp)"
+	sleep 1
+    cat "${WRTPRESENCE_DHCP_LEASES}"
+	return
+}
+WrtPresenceDhcp ()
+{
+	# Creating a file
+	touch "${WRTPRESENCE_DHCP_LEASES}"
+	touch "${WRTPRESENCE_DHCP_LEASES}.new"
+	# Prints the dhcp.leases file in 1 line separated by | in wrtpresence_dhcp.leases.new.
+	cat "${DHCP_LEASES}" | awk '{print $2";"$3";"$4}' | tr '\n' '|' > "${WRTPRESENCE_DHCP_LEASES}.new"
+	# Move the wrtpresence_dhcp.leases.new file to wrtpresence_dhcp.leases.
+	mv "${WRTPRESENCE_DHCP_LEASES}.new" "${WRTPRESENCE_DHCP_LEASES}"
+    #Print 6 characters per line to get around the 1024 character limit.	
+	awk '(NR % 6 == 1) {print; for(i=1; i<6 && getline ; i++) { print }; printf "\n"}' RS='|' ORS='|' "${WRTPRESENCE_DHCP_LEASES}" > "${WRTPRESENCE_DHCP_LEASES}.new"
+	# Move the wrtpresence_dhcp.leases.new file to wrtpresence_dhcp.leases.	
+	mv "${WRTPRESENCE_DHCP_LEASES}.new" "${WRTPRESENCE_DHCP_LEASES}"
 	return
 }
 # ---------------------------------------------------
@@ -65,7 +83,7 @@ dumpDhcpLeases ()
 # Write associated STA client MAC addresses to local syslog.
 # If a syslog-ng server is configured in LUCI, the log will be forwarded to it.
 logger -t "wrtwifistareport" "$(echo "$(dumpLocalAssociatedStations)")"
-logger -t "wrtdhcpleasesreport" "$(echo "$(dumpDhcpLeases)")"
+logger -t "wrtdhcpleasesreport" "$(echo "$(dumpWrtPresenceDhcp)")"
 #
 # For testing purposes only.
 # echo "$(dumpLocalAssociatedStations)"
