@@ -41,7 +41,7 @@ attributes = `wrtpresence/ab12cd23ab12/attributes` (unique_id = Address mac)
 ```json
 {
   "mac": "ab:12:cd:23:ab:12",
-  "source_type": "WifiAP-02", (Nom de l'appareil Openwrt WifiAP-01 or WifiAP-02...)
+  "source_type": "WifiAP-02", (Device name Openwrt WifiAP-01 or WifiAP-02...)
   "device_ssid": "2.4ghz", (Names can be changed. See the two extract nodes (to make searching easier, write "table" in info))
   "ip": "192.x.x.x", (IP assigned in dhcp.leases)
   "host_name": "Computer HP" (hostname in openwrt if available in dhcp.leases otherwise mac address)
