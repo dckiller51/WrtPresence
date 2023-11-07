@@ -174,11 +174,11 @@ In the mqtt out nodes, set or select your mqtt server.
 A special thanks you to everyone who helped me with this project in one way or another.
 
 * **Catfriend1** (The author of the bash code) [Github][github]
-* **Biscuit** (Help with Node-red) [Home Assistant][home-assistant]
+* **Biscuit** (Help with Node-red) [Community home-assistant][Community home-assistant]
 * **Ed Morton** (Help with bash code) [Stackoverflow][stackoverflow]
 
 <!-- References -->
 
 [github]: https://github.com/
-[home-assistant]: https://community.home-assistant.io/
+[Community home-assistant]: https://community.home-assistant.io/
 [stackoverflow]: https://stackoverflow.com/
