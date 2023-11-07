@@ -91,13 +91,6 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 # 		syslog-ng								required for log collection from other APs
 # 
 #
-# FIFO output line examples:
-# 	"G/CONSOLIDATED_PRESENCE_STATE=away"
-# 	"G/CONSOLIDATED_PRESENCE_STATE=present"
-# 	"DEV/[DEVICE_NAME]=away"
-# 	"DEV/[DEVICE_NAME]=present"
-# 	
-#
 # For testing purposes only:
 # 	killall logread; killall tail; sh wrtpresence stop; bash wrtpresence_main.sh debug
 # 	kill -INT "$(cat "/tmp/wrtpresence_main.sh.pid")"

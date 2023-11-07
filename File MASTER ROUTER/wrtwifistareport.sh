@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/bash
 #
 # Info:			OpenWRT Wifi STA Syslog Reporter
 # Filename:		wrtwifistareport.sh
@@ -14,8 +14,7 @@
 # 	*/5 * * * * /bin/sh "/root/wrtwifistareport.sh" >/dev/null 2>&1
 # Restart Cron:
 # 	/etc/init.d/cron restart
-WRTPRESENCE_DHCP_LEASES="/tmp/wrtpresence_dhcp.leases"
-DHCP_LEASES="/tmp/dhcp.leases"
+dhcp_leases='/tmp/dhcp.leases'
 # -----------------------------------------------------
 # -------------- START OF FUNCTION BLOCK --------------
 # -----------------------------------------------------
@@ -48,27 +47,42 @@ dumpLocalAssociatedStations ()
 	# Content already returned because iw dev was called loudly.
 	return
 }
+
+WrtPresenceDhcp() {
+	#
+	# Usage:				WrtPresenceDhcp
+	# Returns:				Recover the mac address, ip address and hostname from dhcp.leases
+	#                       Determines the number of devices sent per line to local syslog.
+	#						Possibility of increasing or decreasing by changing maxLeases=10
+	#
+    awk -v maxLeases=10 -v OFS=';' '
+        NF {
+            lease = $2 OFS $3 OFS $4
+            leases = (numLeases++ ? leases "|" : "") lease
+            if ( numLeases == maxLeases ) {
+                print leases
+                numLeases = 0
+            }
+        }
+        END {
+            if ( numLeases ) {
+                print leases
+            }
+        }
+    ' "$dhcp_leases"
+}
 dumpWrtPresenceDhcp ()
 {
-	echo "$(WrtPresenceDhcp)"
-	sleep 1
-    cat "${WRTPRESENCE_DHCP_LEASES}"
-	return
-}
-WrtPresenceDhcp ()
-{
-	# Creating a file
-	touch "${WRTPRESENCE_DHCP_LEASES}"
-	touch "${WRTPRESENCE_DHCP_LEASES}.new"
-	# Prints the dhcp.leases file in 1 line separated by | in wrtpresence_dhcp.leases.new.
-	cat "${DHCP_LEASES}" | awk '{print $2";"$3";"$4}' | tr '\n' '|' > "${WRTPRESENCE_DHCP_LEASES}.new"
-	# Move the wrtpresence_dhcp.leases.new file to wrtpresence_dhcp.leases.
-	mv "${WRTPRESENCE_DHCP_LEASES}.new" "${WRTPRESENCE_DHCP_LEASES}"
-    #Print 6 characters per line to get around the 1024 character limit.	
-	awk '(NR % 6 == 1) {print; for(i=1; i<6 && getline ; i++) { print }; printf "\n"}' RS='|' ORS='|' "${WRTPRESENCE_DHCP_LEASES}" > "${WRTPRESENCE_DHCP_LEASES}.new"
-	# Move the wrtpresence_dhcp.leases.new file to wrtpresence_dhcp.leases.	
-	mv "${WRTPRESENCE_DHCP_LEASES}.new" "${WRTPRESENCE_DHCP_LEASES}"
-	return
+	#
+	# Usage:				dumpWrtPresenceDhcp
+	# Returns:				Sends the dhcp.leases file to local syslog 1 line per second.
+	#                       The number of lines depends on the number of devices per line defined
+	#						in WrtPresenceDhcp.
+	#
+    while IFS= read -r leases; do
+        echo "$leases" | logger -t "wrtdhcpleasesreport"
+        sleep 1
+    done < <(WrtPresenceDhcp)
 }
 # ---------------------------------------------------
 # -------------- END OF FUNCTION BLOCK --------------
@@ -83,7 +97,7 @@ WrtPresenceDhcp ()
 # Write associated STA client MAC addresses to local syslog.
 # If a syslog-ng server is configured in LUCI, the log will be forwarded to it.
 logger -t "wrtwifistareport" "$(echo "$(dumpLocalAssociatedStations)")"
-logger -t "wrtdhcpleasesreport" "$(echo "$(dumpWrtPresenceDhcp)")"
+dumpWrtPresenceDhcp
 #
 # For testing purposes only.
 # echo "$(dumpLocalAssociatedStations)"
