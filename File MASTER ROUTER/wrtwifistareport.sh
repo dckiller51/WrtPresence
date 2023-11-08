@@ -48,41 +48,21 @@ dumpLocalAssociatedStations ()
 	return
 }
 
-WrtPresenceDhcp() {
-	#
-	# Usage:				WrtPresenceDhcp
-	# Returns:				Recover the mac address, ip address and hostname from dhcp.leases
-	#                       Determines the number of devices sent per line to local syslog.
-	#						Possibility of increasing or decreasing by changing maxLeases=10
-	#
-    awk -v maxLeases=10 -v OFS=';' '
-        NF {
-            lease = $2 OFS $3 OFS $4
-            leases = (numLeases++ ? leases "|" : "") lease
-            if ( numLeases == maxLeases ) {
-                print leases
-                numLeases = 0
-            }
-        }
-        END {
-            if ( numLeases ) {
-                print leases
-            }
-        }
-    ' "$dhcp_leases"
-}
 dumpWrtPresenceDhcp ()
 {
 	#
 	# Usage:				dumpWrtPresenceDhcp
-	# Returns:				Sends the dhcp.leases file to local syslog 1 line per second.
-	#                       The number of lines depends on the number of devices per line defined
-	#						in WrtPresenceDhcp.
+	# Returns:				Sends the dhcp.leases file to the local syslog.
+	#                       Recover the mac address, ip address and hostname.
+	#                       The number of lines depends on the number of devices.960 characters per line
 	#
-    while IFS= read -r leases; do
-        echo "$leases" | logger -t "wrtdhcpleasesreport"
-        sleep 1
-    done < <(WrtPresenceDhcp)
+    < "$dhcp_leases" awk '
+        { $0 = $2";"$3";"$4"|" }
+        (t+=length())>960 { print "\n"; t=length }
+        { print }
+        END { print "\n" }
+    ' ORS='' |
+    logger -t wrtdhcpleasesreport
 }
 # ---------------------------------------------------
 # -------------- END OF FUNCTION BLOCK --------------
@@ -97,7 +77,7 @@ dumpWrtPresenceDhcp ()
 # Write associated STA client MAC addresses to local syslog.
 # If a syslog-ng server is configured in LUCI, the log will be forwarded to it.
 logger -t "wrtwifistareport" "$(echo "$(dumpLocalAssociatedStations)")"
-dumpWrtPresenceDhcp
+echo "$(dumpWrtPresenceDhcp)"
 #
 # For testing purposes only.
 # echo "$(dumpLocalAssociatedStations)"

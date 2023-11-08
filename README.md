@@ -175,7 +175,7 @@ A special thanks you to everyone who helped me with this project in one way or a
 
 * **Catfriend1** (The author of the bash code) [Github][github]
 * **Biscuit** (Help with Node-red) [Community Home Assistant][community-home-assistant]
-* **Ed Morton** (Help with bash code) [Stackoverflow][stackoverflow]
+* **Ed Morton** and **jhnc** (Help with bash code) [Stackoverflow][stackoverflow]
 
 <!-- References -->
 
