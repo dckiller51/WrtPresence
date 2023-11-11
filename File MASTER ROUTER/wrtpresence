@@ -170,6 +170,14 @@ case "$1" in
 		;;
 'showstate')
 		# Show content of state files.
+		echo "*** associations.dto: =0 = PRESENT, >0 and <5 = PRESENT, disconnected, =5 = AWAY"
+		cat "/tmp/associations.dto"
+		echo ""
+		#
+		echo "*** present_devices.dto: Device names defined in main service script."
+		cat "/tmp/present_devices.dto";
+		echo ""
+		#
 		echo "*** wrtwifistareport last received unix time"
 		grep ".*" /tmp/*.last_wrtwifistareport | sed -e "s/^\/tmp\///g" -e "s/\.last_wrtwifistareport//g"
 		exit 0
@@ -199,6 +207,9 @@ case "$1" in
 		;;
 'clean')
 		# rm -f "${SERVICE_MAIN_LOG}"
+		rm -f "/tmp/associations.dto"
+		rm -f "/tmp/present_devices.dto"
+		# 
 		echo "$0: [INFO] Cleanup done."
 		exit 0
 		;;		

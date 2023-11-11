@@ -1,4 +1,4 @@
-#!/bin/bash
+#/bin/sh
 #
 # Info:			OpenWRT Wifi STA Syslog Reporter
 # Filename:		wrtwifistareport.sh
@@ -14,6 +14,8 @@
 # 	*/5 * * * * /bin/sh "/root/wrtwifistareport.sh" >/dev/null 2>&1
 # Restart Cron:
 # 	/etc/init.d/cron restart
+#
+associations_dto='/tmp/associations.dto'
 dhcp_leases='/tmp/dhcp.leases'
 # -----------------------------------------------------
 # -------------- START OF FUNCTION BLOCK --------------
@@ -48,6 +50,23 @@ dumpLocalAssociatedStations ()
 	return
 }
 
+dumpWrtAssociations ()
+{
+	#
+	# Usage:				dumpWrtAssociations
+	# Returns:				Sends the association.dto file to the local syslog.
+	#                       Recover associated STA client MAC addresses and disconnected IDX.
+	#                       The number of lines depends on the number of devices.960 characters per line
+	#
+    < "$associations_dto" awk '
+        { $0 = $0"|" }
+        (t+=length())>960 { print "\n"; t=length }
+        { print }
+        END { print "\n" }
+    ' ORS='' |
+    logger -t wrtassociationreport
+}
+
 dumpWrtPresenceDhcp ()
 {
 	#
@@ -64,6 +83,7 @@ dumpWrtPresenceDhcp ()
     ' ORS='' |
     logger -t wrtdhcpleasesreport
 }
+
 # ---------------------------------------------------
 # -------------- END OF FUNCTION BLOCK --------------
 # ---------------------------------------------------
@@ -76,10 +96,11 @@ dumpWrtPresenceDhcp ()
 # 
 # Write associated STA client MAC addresses to local syslog.
 # If a syslog-ng server is configured in LUCI, the log will be forwarded to it.
-logger -t "wrtwifistareport" "$(echo "$(dumpLocalAssociatedStations)")"
-echo "$(dumpWrtPresenceDhcp)"
+logger -t "wrtwifistareport" "$(echo ";$(dumpLocalAssociatedStations)")"
+dumpWrtAssociations
+dumpWrtPresenceDhcp
 #
 # For testing purposes only.
-# echo "$(dumpLocalAssociatedStations)"
+# echo ";$(dumpLocalAssociatedStations)"
 #
 exit 0
